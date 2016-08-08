@@ -10,8 +10,8 @@
 #include <omp.h>
 
 typedef float Real;
-constexpr static std::size_t width  = 72;
-constexpr static std::size_t height = 72;
+constexpr static std::size_t width  = 3072;
+constexpr static std::size_t height = 3072;
 constexpr static Real kB = 1.;
 constexpr static Real T  = 1.;
 constexpr static std::array<Real, 5> prob{{1.,
@@ -42,24 +42,6 @@ inline void step(std::array<std::array<bool, width>, height>& space,
     return;
 }
 
-inline std::array<Real, width> genrnd(std::mt19937& mt,
-                                      std::uniform_real_distribution<Real>& uni)
-{
-    std::array<Real, width> retval;
-    for(auto iter = retval.begin(); iter < retval.end(); ++iter)
-        *iter = uni(mt);
-    return retval;
-}
-
-inline std::array<bool, width> initline(std::mt19937& mt,
-        std::bernoulli_distribution& bn)
-{
-    std::array<bool, width> retval;
-    for(auto iter = retval.begin(); iter < retval.end(); ++iter)
-        *iter = bn(mt);
-    return retval;
-}
-
 int main()
 {
     const std::chrono::system_clock::time_point start =
@@ -70,14 +52,9 @@ int main()
     std::bernoulli_distribution bn(0.5);
     std::uniform_real_distribution<Real> uni(0., 1.);
 
-#pragma omp parallel for ordered
-    for(auto iter = space.begin(); iter < space.end(); ++iter)
-    {
-#pragma omp ordered
-        {
-            *iter = initline(mt, bn);
-        }//ordered
-    }
+    for(auto outer = space.begin(); outer < space.end(); ++outer)
+        for(auto iter = outer->begin(); iter != outer->end(); ++iter)
+            *iter = bn(mt);
 
     std::array<std::array<Real, width>, height> random{};
     std::size_t t = 0;
@@ -86,17 +63,12 @@ int main()
         std::chrono::system_clock::now();
     while(t < 100)
     {
+        for(auto outer = random.begin(); outer < random.end(); ++outer)
+            for(auto iter = outer->begin(); iter != outer->end(); ++iter)
+                *iter = uni(mt);
+
 #pragma omp parallel
 {
-#pragma omp for ordered
-        for(auto outer = random.begin(); outer < random.end(); ++outer)
-        {
-#pragma omp ordered
-            {
-            *outer = genrnd(mt, uni);
-            }//ordered
-        }
-
 #pragma omp for
         for(std::size_t i=0; i<height; ++i)
         {
