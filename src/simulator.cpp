@@ -57,6 +57,11 @@ int main()
             *iter = bn(mt);
 
     std::array<std::array<Real, width>, height> random{};
+    std::array<char, (width+1) * height + 1> format;
+    for(std::size_t i=0; i<height; ++i)
+        format[(width+1)*i+width] = '\n';
+    format[(width+1)*height] = '\0';
+
     std::size_t t = 0;
 
     const std::chrono::system_clock::time_point start_time =
@@ -94,12 +99,9 @@ int main()
 }//parallel
 
         for(std::size_t i=0; i<height; ++i)
-        {
             for(std::size_t j=0; j<width; ++j)
-                putc(space[i][j]+48, stdout);
-            putc('\n', stdout);
-        }
-        fputc('\n', stdout);
+                format[(width+1) * i + j] = space[i][j]+48;
+        puts(format.data());
         ++t;
     }
 
