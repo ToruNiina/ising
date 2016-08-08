@@ -1,22 +1,25 @@
 #include <array>
 #include <random>
-#include <iostream>
 #include <chrono>
+#include <iostream>
+
 #include <cmath>
 #include <cstddef>
+#include <cstdio>
+
 #include <omp.h>
 
-constexpr static std::size_t width  = 3072;
-constexpr static std::size_t height = 3072;
-constexpr static double kB = 1.;
-constexpr static double T  = 1.;
-constexpr static std::array<double, 5> prob{{1.,
-    std::exp(1./(-kB * T)), std::exp(2./(-kB * T)),
-    std::exp(3./(-kB * T)), std::exp(4./(-kB * T))}};
+constexpr static std::size_t width  = 72;
+constexpr static std::size_t height = 72;
+constexpr static float kB = 1.;
+constexpr static float T  = 1.;
+constexpr static std::array<float, 5> prob{{1.,
+    std::exp(1.f/(-kB * T)), std::exp(2.f/(-kB * T)),
+    std::exp(3.f/(-kB * T)), std::exp(4.f/(-kB * T))}};
 
 inline bool step(const bool c,
                  const bool n, const bool e, const bool s, const bool w,
-                 const double rnd)
+                 const float rnd)
 {
     short dE = 0;
     if(c != n) --dE; else ++dE;
@@ -27,7 +30,7 @@ inline bool step(const bool c,
 }
 
 inline void step(std::array<std::array<bool, width>, height>& space,
-                 const std::size_t i, const std::size_t j, const double rnd)
+                 const std::size_t i, const std::size_t j, const float rnd)
 {
     space[i][j] = step(space[i][j],
        space[i][(j+1 < width) ? j+1 : j+1-width],
@@ -46,13 +49,14 @@ int main()
     std::array<std::array<bool, width>, height> space{};
     std::mt19937 mt(10);
     std::bernoulli_distribution bn(0.5);
-    std::uniform_real_distribution<double> uni(0., 1.);
+    std::uniform_real_distribution<float> uni(0., 1.);
 
-    for(auto outer = space.begin(); outer != space.end(); ++outer)
+#pragma omp parallel for
+    for(auto outer = space.begin(); outer < space.end(); ++outer)
         for(auto iter = outer->begin(); iter != outer->end(); ++iter)
             *iter = bn(mt);
 
-    std::array<std::array<double, width>, height> random{};
+    std::array<std::array<float, width>, height> random{};
     std::size_t t = 0;
 
     const std::chrono::system_clock::time_point start_time =
@@ -90,15 +94,13 @@ int main()
 
 }//parallel
 
-//         for(std::size_t i=0; i<height; ++i)
-//         {
-//             for(std::size_t j=0; j<width; ++j)
-//             {
-//                 std::cout << space[i][j];
-//             }
-//             std::cout << std::endl;
-//         }
-//         std::cout << std::endl;
+        for(std::size_t i=0; i<height; ++i)
+        {
+            for(std::size_t j=0; j<width; ++j)
+                putc(space[i][j]+48, stdout);
+            putc('\n', stdout);
+        }
+        fputc('\n', stdout);
         ++t;
     }
 
