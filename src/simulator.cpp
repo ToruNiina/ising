@@ -74,7 +74,7 @@ int main()
 
 #pragma omp parallel
 {
-#pragma omp for
+#pragma omp for schedule(guided)
         for(std::size_t i=0; i<height; ++i)
         {
             if(i % 2 == 0)
@@ -85,7 +85,7 @@ int main()
                     step(space, i, j, random[i][j]);
         }
 
-#pragma omp for
+#pragma omp for schedule(guided)
         for(std::size_t i=0; i<height; ++i)
         {
             if(i % 2 == 0)
